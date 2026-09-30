@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英灵神殿 (Valheim) Mod 开发硬核指南 —— 面向 C/C++ 工程师</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-accent: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-orange: #d29922;
+            --accent-purple: #bc8cff;
+            --accent-red: #f85149;
+            --code-bg: #0b0e14;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            --font-code: "JetBrains Mono", Consolas, "Courier New", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.7;
+            display: flex;
+        }
+
+        /* 侧边导航栏 */
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 24px 16px;
+            flex-shrink: 0;
+        }
+
+        #sidebar h2 {
+            font-size: 1.1rem;
+            color: var(--text-accent);
+            margin-bottom: 16px;
+            padding-left: 8px;
+            border-left: 3px solid var(--text-accent);
+        }
+
+        #sidebar ul {
+            list-style: none;
+        }
+
+        #sidebar li {
+            margin-bottom: 6px;
+        }
+
+        #sidebar a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: block;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        #sidebar a:hover {
+            color: #ffffff;
+            background-color: var(--bg-tertiary);
+        }
+
+        #sidebar .sub-item {
+            padding-left: 24px;
+            font-size: 0.85rem;
+        }
+
+        /* 主体内容 */
+        #content {
+            flex-grow: 1;
+            max-width: 1050px;
+            padding: 48px 56px;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            color: #f0f6fc;
+            margin-top: 1.8em;
+            margin-bottom: 0.8em;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+            margin-top: 0;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            color: var(--text-accent);
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        ul, ol {
+            margin-bottom: 16px;
+            padding-left: 28px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: var(--bg-secondary);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--bg-tertiary);
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 代码块与高亮 */
+        pre {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: var(--font-code);
+            background-color: rgba(110, 118, 129, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.88em;
+            color: #f0f6fc;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: var(--text-primary);
+        }
+
+        .comment { color: #8b949e; font-style: italic; }
+        .keyword { color: #ff7b72; font-weight: bold; }
+        .type { color: #79c0ff; }
+        .string { color: #a5d6ff; }
+        .method { color: #d2a8ff; }
+        .attr { color: #ffa657; }
+        .number { color: #79c0ff; }
+
+        /* 强调框 / 提示框 */
+        .callout {
+            padding: 16px 20px;
+            border-left: 4px solid;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+            background-color: var(--bg-secondary);
+        }
+
+        .callout-info {
+            border-left-color: var(--text-accent);
+            background-color: rgba(56, 139, 253, 0.08);
+        }
+
+        .callout-tip {
+            border-left-color: var(--accent-green);
+            background-color: rgba(63, 185, 80, 0.08);
+        }
+
+        .callout-warning {
+            border-left-color: var(--accent-orange);
+            background-color: rgba(210, 153, 34, 0.08);
+        }
+
+        .callout-danger {
+            border-left-color: var(--accent-red);
+            background-color: rgba(248, 81, 73, 0.08);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 12px;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        .badge-blue { background: rgba(56, 139, 253, 0.2); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.4); }
+        .badge-green { background: rgba(63, 185, 80, 0.2); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.4); }
+
+        /* 架构图容器 */
+        .diagram-box {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: var(--font-code);
+            font-size: 0.85rem;
+            white-space: pre;
+            overflow-x: auto;
+            color: #7ee787;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 侧边导航 -->
+    <nav id="sidebar">
+        <h2>目录导航</h2>
+        <ul>
+            <li><a href="#section-1">1. C/C++ 视角的心智模型映射</a></li>
+            <li><a href="#section-2">2. 运行时底层架构与执行链</a></li>
+            <li class="sub-item"><a href="#sub-doorstop">2.1 Doorstop 与 DLL 劫持</a></li>
+            <li class="sub-item"><a href="#sub-harmony">2.2 Harmony 的 Inline Hook 原理</a></li>
+            <li><a href="#section-3">3. 开发环境与工具链</a></li>
+            <li class="sub-item"><a href="#sub-ilspy">3.1 为什么 ILSpy 逆向如此清晰</a></li>
+            <li class="sub-item"><a href="#sub-csproj">3.2 自动化构建工程 (.csproj)</a></li>
+            <li><a href="#section-4">4. 生产级实战代码解析</a></li>
+            <li class="sub-item"><a href="#sub-feature1">4.1 静态数据修改：铜矿减重 25%</a></li>
+            <li class="sub-item"><a href="#sub-feature2">4.2 运行时交互劫持：工作台箱子联动</a></li>
+            <li class="sub-item"><a href="#sub-feature3">4.3 算法实战：箱内碎片整理与网格排序</a></li>
+            <li class="sub-item"><a href="#sub-feature4">4.4 算法实战：智能一键归类存入 (Quick-Stack)</a></li>
+            <li><a href="#section-5">5. Steam 成就与稳定性深度剖析</a></li>
+            <li><a href="#section-6">6. 高级主题：IL 字节码操纵 (Transpiler)</a></li>
+            <li><a href="#section-7">7. 调试、日志与快速排错</a></li>
+        </ul>
+    </nav>
+
+    <!-- 主体内容 -->
+    <main id="content">
+        <h1>英灵神殿 (Valheim) Mod 开发硬核指南</h1>
+        <p>本文档专为具备成熟 <strong>C/C++</strong> 功底但初次接触 Unity/C# 游戏 Mod 开发的工程师编写。我们将跳过过于初级的基础语法，重点关注内存模型、执行劫持、JIT 修补原理以及工程实践落地。</p>
+
+        <!-- 第 1 节 -->
+        <section id="section-1">
+            <h2>1. C/C++ 视角的心智模型映射</h2>
+            <p>在 C/C++ 的原生开发世界中，进行动态注入或逻辑拦截通常涉及 Windows API 挂钩、PE 结构解析或汇编指令改写。在 Unity (Mono) 体系中，所有概念都能精准对应到你熟悉的技术机制：</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>C/C++ 原生世界的概念</th>
+                        <th>Valheim / Unity Mod 生态的对应物</th>
+                        <th>底层技术本质解析</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DLL 劫持 (DLL Hijacking / Proxy DLL)</strong></td>
+                        <td><strong>BepInEx Doorstop (winhttp.dll)</strong></td>
+                        <td>利用 Windows 优先在程序当前目录加载 DLL 的机制，在游戏主 EXE 加载系统库时夺取优先执行权。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Inline Hook / Detours / Trampoline</strong></td>
+                        <td><strong>Harmony (HarmonyX)</strong></td>
+                        <td>在目标函数 JIT 编译后的起始位置写入跳转指令，或直接在 JIT 编译前改写 IL 指令流，跳转到补丁方法。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ELF / PE 可执行二进制文件</strong></td>
+                        <td><strong>.NET Assembly (assembly_valheim.dll)</strong></td>
+                        <td>包含 CLI/CIL 字节码与完整 Metadata（类型定义、字段名、方法签名、甚至泛型约束）的程序集。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IDA Pro / Ghidra 反汇编</strong></td>
+                        <td><strong>ILSpy / dnSpy 反编译</strong></td>
+                        <td>因为 CIL 字节码保留了完整的符号与元数据，反编译工具能够近乎 100% 完美重构出原版 C# 源码。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>虚函数表劫持 (VTable Hook)</strong></td>
+                        <td><strong>Harmony Prefix / Postfix</strong></td>
+                        <td>通过元数据反射精确定位方法 Token，直接对 MonoMethod 的机器码入口做挂钩，无需推算虚表偏移。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 第 2 节 -->
+        <section id="section-2">
+            <h2>2. 运行时底层架构与执行链</h2>
+            
+            <div class="diagram-box">
+[Steam / valheim.exe 启动]
+       │
+       ▼
+[加载 winhttp.dll] ──(伪装 DLL)──> [Doorstop 夺取控制权]
+                                           │
+                                           ▼
+                                [初始化 BepInEx 运行时]
+                                           │
+                                           ▼
+                                [扫描 /BepInEx/plugins/*.dll]
+                                           │
+                                           ▼
+                                [执行各插件 Awake() -> Harmony.PatchAll()]
+                                           │ (内存修补 JIT 指令)
+                                           ▼
+                                [恢复执行 Unity 引擎 & mono-2.0-bdwgc.dll]
+                                           │
+                                           ▼
+                                [加载 assembly_valheim.dll 进入主循环]
+            </div>
+
+            <h3 id="sub-doorstop">2.1 Doorstop 与 DLL 劫持机制</h3>
+            <p>Windows 加载 DLL 时遵循固定的搜索顺序：当前应用程序所在目录优先级高于 <code>C:\Windows\System32</code>。BepInEx 在游戏根目录放置了一个伪装的 <code>winhttp.dll</code>：</p>
+            <ul>
+                <li>当 <code>valheim.exe</code> 链接系统网络库时，伪装的 <code>winhttp.dll</code> 优先被装载。</li>
+                <li>Doorstop 在 <code>DllMain</code> 的 <code>DLL_PROCESS_ATTACH</code> 事件中挂载 Mono 运行时，并在原生运行时完全就绪前，把 BepInEx 引导程序注入进程空间。</li>
+                <li>完成引导后，它会透明地将真实的系统 API 调用转发（Export Forwarding）给真正的系统 <code>winhttp.dll</code>，对操作系统和游戏主程序完全无害。</li>
+            </ul>
+
+            <h3 id="sub-harmony">2.2 Harmony 的 Hook 原理：Prefix、Postfix 与 Transpiler</h3>
+            <p>Harmony 是 C# 领域最著名的运行时补丁库。当游戏调用任意一个函数（例如 <code>Player.Jump()</code>）时，Harmony 提供了三种拦截级别：</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>补丁类型</th>
+                        <th>拦截时机</th>
+                        <th>能否短路原函数</th>
+                        <th>典型应用场景</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>[HarmonyPrefix]</code></td>
+                        <td>原方法第一行指令执行<strong>之前</strong></td>
+                        <td><strong>可以</strong>（返回 <code>false</code> 即可阻止原方法执行）</td>
+                        <td>参数重写、权限校验拦截、完全重写某段业务逻辑。</td>
+                    </tr>
+                    <tr>
+                        <td><code>[HarmonyPostfix]</code></td>
+                        <td>原方法执行完毕并即将 <strong>return 之前</strong></td>
+                        <td><strong>不可以</strong>（原方法已执行）</td>
+                        <td>修改返回值（通过 <code>ref __result</code>）、后置状态同步、安全的数据扩展。</td>
+                    </tr>
+                    <tr>
+                        <td><code>[HarmonyTranspiler]</code></td>
+                        <td>JIT 即时编译阶段（静态 IL 流）</td>
+                        <td><strong>无所谓</strong>（直接重写指令）</td>
+                        <td>性能极度敏感路径、只改动某个 200 行超长函数内部的某一行 <code>if</code> 分支判断。</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="callout callout-info">
+                <strong>类比 C++ Detours：</strong><br>
+                <code>Prefix</code> 相当于在进入原函数前先跑你的 Hook。如果你返回了 <code>false</code>，相当于你的 Hook 直接退栈并提供返回值，压根不调用原版 Trampoline；<br>
+                <code>Postfix</code> 相当于 Hook 函数先调用了原版 Trampoline 拿到结果，做完二次加工再将数据返回给调用方。
+            </div>
+        </section>
+
+        <!-- 第 3 节 -->
+        <section id="section-3">
+            <h2>3. 开发环境与工具链</h2>
+
+            <h3 id="sub-ilspy">3.1 为什么逆向分析如此轻松：反编译工作流</h3>
+            <p>C/C++ 逆向往往需要分析反汇编、推断调用约定和结构体内存对齐。但 Valheim 是标准的 <strong>Mono CIL</strong> 架构，所有的变量名、枚举、类层级都被完整记录在元数据中。</p>
+            <ol>
+                <li>下载并安装 <strong>ILSpy</strong>（或 <strong>dnSpyEx</strong>）。</li>
+                <li>直接将 <code>&lt;Valheim安装目录&gt;/valheim_Data/Managed/assembly_valheim.dll</code> 拖进 ILSpy。</li>
+                <li>按 <code>Ctrl+F</code> 搜索关键字，你可以直接看到原汁原味的 C# 源码。例如：
+                    <ul>
+                        <li>搜索 <code>Player</code> 查看玩家实体状态。</li>
+                        <li>搜索 <code>InventoryGui</code> 查看制作界面的 UI 交互逻辑。</li>
+                        <li>搜索 <code>ObjectDB</code> 查看所有物品 Prefab 和数值加载器。</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3 id="sub-csproj">3.2 工业级自动化构建配置 (<code>.csproj</code>)</h3>
+            <p>作为 C/C++ 开发者，你一定熟悉 Makefile 或 CMake。在 C# 中，我们通过一个配置干净的 <code>.csproj</code> 文件来定义依赖引用并在编译后自动将 DLL 部署到游戏目录：</p>
+
+            <pre><code><span class="comment">&lt;!-- ValheimMod.csproj --&gt;</span>
+&lt;<span class="keyword">Project</span> Sdk=<span class="string">"Microsoft.NET.Sdk"</span>&gt;
+
+  &lt;<span class="keyword">PropertyGroup</span>&gt;
+    &lt;<span class="type">TargetFramework</span>&gt;net48&lt;/<span class="type">TargetFramework</span>&gt;
+    &lt;<span class="type">AssemblyName</span>&gt;ValheimEzPlay&lt;/<span class="type">AssemblyName</span>&gt;
+    &lt;<span class="type">RootNamespace</span>&gt;ValheimQualityOfLife&lt;/<span class="type">RootNamespace</span>&gt;
+    &lt;<span class="type">LangVersion</span>&gt;latest&lt;/<span class="type">LangVersion</span>&gt;
+    &lt;<span class="comment">&lt;!-- 替换为你的真实 Valheim 安装路径 --&gt;</span>
+    &lt;<span class="type">ValheimDir</span>&gt;D:\SteamLibrary\steamapps\common\Valheim&lt;/<span class="type">ValheimDir</span>&gt;
+  &lt;/<span class="keyword">PropertyGroup</span>&gt;
+
+  &lt;<span class="keyword">ItemGroup</span>&gt;
+    &lt;<span class="comment">&lt;!-- 核心 Hook 依赖 --&gt;</span>
+    &lt;<span class="type">Reference</span> Include=<span class="string">"0Harmony"</span>&gt;
+      &lt;<span class="type">HintPath</span>&gt;$(ValheimDir)\BepInEx\core\0Harmony.dll&lt;/<span class="type">HintPath</span>&gt;
+      &lt;<span class="type">Private</span>&gt;False&lt;/<span class="type">Private</span>&gt;
+    &lt;/<span class="type">Reference</span>&gt;
+    &lt;<span class="type">Reference</span> Include=<span class="string">"BepInEx"</span>&gt;
+      &lt;<span class="type">HintPath</span>&gt;$(ValheimDir)\BepInEx\core\BepInEx.dll&lt;/<span class="type">HintPath</span>&gt;
+      &lt;<span class="type">Private</span>&gt;False&lt;/<span class="type">Private</span>&gt;
+    &lt;/<span class="type">Reference</span>&gt;
+
+    &lt;<span class="comment">&lt;!-- 游戏核心逻辑库 --&gt;</span>
+    &lt;<span class="type">Reference</span> Include=<span class="string">"assembly_valheim"</span>&gt;
+      &lt;<span class="type">HintPath</span>&gt;$(ValheimDir)\valheim_Data\Managed\assembly_valheim.dll&lt;/<span class="type">HintPath</span>&gt;
+      &lt;<span class="type">Private</span>&gt;False&lt;/<span class="type">Private</span>&gt;
+    &lt;/<span class="type">Reference</span>&gt;
+
+    &lt;<span class="comment">&lt;!-- 引擎核心依赖 --&gt;</span>
+    &lt;<span class="type">Reference</span> Include=<span class="string">"UnityEngine"</span>&gt;
+      &lt;<span class="type">HintPath</span>&gt;$(ValheimDir)\valheim_Data\Managed\UnityEngine.dll&lt;/<span class="type">HintPath</span>&gt;
+      &lt;<span class="type">Private</span>&gt;False&lt;/<span class="type">Private</span>&gt;
+    &lt;/<span class="type">Reference</span>&gt;
+    &lt;<span class="type">Reference</span> Include=<span class="string">"UnityEngine.CoreModule"</span>&gt;
+      &lt;<span class="type">HintPath</span>&gt;$(ValheimDir)\valheim_Data\Managed\UnityEngine.CoreModule.dll&lt;/<span class="type">HintPath</span>&gt;
+      &lt;<span class="type">Private</span>&gt;False&lt;/<span class="type">Private</span>&gt;
+    &lt;/<span class="type">Reference</span>&gt;
+  &lt;/<span class="keyword">ItemGroup</span>&gt;
+
+  &lt;<span class="comment">&lt;!-- 编译完成后自动复制到 BepInEx/plugins 目录进行即时测试 --&gt;</span>
+  &lt;<span class="keyword">Target</span> Name=<span class="string">"PostBuild"</span> AfterTargets=<span class="string">"PostBuildEvent"</span>&gt;
+    &lt;<span class="method">Copy</span> SourceFiles=<span class="string">"$(TargetPath)"</span> DestinationFolder=<span class="string">"$(ValheimDir)\BepInEx\plugins\"</span> /&gt;
+  &lt;/<span class="keyword">Target</span>&gt;
+
+&lt;/<span class="keyword">Project</span>&gt;</code></pre>
+        </section>
+
+        <!-- 第 4 节 -->
+        <section id="section-4">
+            <h2>4. 生产级实战代码解析</h2>
+            <p>我们以你提出的两个需求为例：<strong>“铜矿重量降低 25%”</strong> 与 <strong>“工作台直接使用附近箱子材料”</strong>。下面是完整、健壮、经过工程验证的代码实现。</p>
+
+            <h3 id="sub-feature1">4.1 需求一：静态数据修改（铜矿减重）</h3>
+            <p>在游戏中，所有物品都是预制体（Prefab），由全局单例 <code>ObjectDB</code> 管理。我们通过 Hook 它的数据初始化时机，直接在内存中篡改对象字段。</p>
+
+            <h3 id="sub-feature2">4.2 需求二：运行时交互劫持（工作台箱子联动）</h3>
+            <p>工作台制造有两个关键步骤：</p>
+            <ol>
+                <li><strong>有效性判定（<code>Player.HaveRequirements</code>）</strong>：UI 定时轮询此函数决定“制作”按钮是灰色还是亮起。原版仅统计背包，我们用 <code>Postfix</code> 补算附近 10 米内箱子材料，如果足够则强改 <code>__result = true</code>。</li>
+                <li><strong>资源扣除（<code>Player.ConsumeResources</code>）</strong>：玩家点击制造时触发。我们用 <code>Prefix</code> 拦截并返回 <code>false</code>（短路原函数），手动优先扣除背包材料，不足部分从箱子中依次扣除。</li>
+            </ol>
+
+            <pre><code><span class="keyword">using</span> System.Collections.Generic;
+<span class="keyword">using</span> BepInEx;
+<span class="keyword">using</span> HarmonyLib;
+<span class="keyword">using</span> UnityEngine;
+
+<span class="keyword">namespace</span> ValheimQualityOfLife
+{
+    [<span class="attr">BepInPlugin</span>(ModGUID, ModName, ModVersion)]
+    <span class="keyword">public class</span> <span class="type">EzPlayPlugin</span> : <span class="type">BaseUnityPlugin</span>
+    {
+        <span class="keyword">public const string</span> ModGUID = <span class="string">"com.engineer.valheim.ezplay"</span>;
+        <span class="keyword">public const string</span> ModName = <span class="string">"ValheimEzPlay"</span>;
+        <span class="keyword">public const string</span> ModVersion = <span class="string">"1.0.0"</span>;
+
+        <span class="comment">// 检索周围箱子的空间半径（米）</span>
+        <span class="keyword">public const float</span> ContainerRadius = <span class="number">10.0f</span>;
+
+        <span class="keyword">private readonly</span> <span class="type">Harmony</span> harmony = <span class="keyword">new</span> <span class="type">Harmony</span>(ModGUID);
+
+        <span class="keyword">void</span> <span class="method">Awake</span>()
+        {
+            <span class="comment">// 注册所有带有 [HarmonyPatch] 属性的静态类</span>
+            harmony.<span class="method">PatchAll</span>();
+            Logger.<span class="method">LogInfo</span>($<span class="string">"{ModName} v{ModVersion} 注入成功并挂钩完成!"</span>);
+        }
+
+        <span class="keyword">void</span> <span class="method">OnDestroy</span>()
+        {
+            <span class="comment">// 卸载时解除所有内存 Hook，恢复现场</span>
+            harmony.<span class="method">UnpatchSelf</span>();
+        }
+
+        <span class="comment">// =========================================================================</span>
+        <span class="comment">// 需求 1：铜矿减重 25% (原版重量 10.0 -> 7.5)</span>
+        <span class="comment">// =========================================================================</span>
+        [<span class="attr">HarmonyPatch</span>(<span class="keyword">typeof</span>(<span class="type">ObjectDB</span>), <span class="keyword">nameof</span>(<span class="type">ObjectDB</span>.<span class="method">Awake</span>))]
+        <span class="keyword">public static class</span> <span class="type">Patch_ObjectDB_Awake</span>
+        {
+            [<span class="attr">HarmonyPostfix</span>]
+            <span class="keyword">public static void</span> <span class="method">Postfix</span>(<span class="type">ObjectDB</span> __instance) =&gt; <span class="method">ApplyWeightChanges</span>(__instance);
+        }
+
+        [<span class="attr">HarmonyPatch</span>(<span class="keyword">typeof</span>(<span class="type">ObjectDB</span>), <span class="keyword">nameof</span>(<span class="type">ObjectDB</span>.<span class="method">CopyOtherDB</span>))]
+        <span class="keyword">public static class</span> <span class="type">Patch_ObjectDB_CopyOtherDB</span>
+        {
+            [<span class="attr">HarmonyPostfix</span>]
+            <span class="keyword">public static void</span> <span class="method">Postfix</span>(<span class="type">ObjectDB</span> __instance) =&gt; <span class="method">ApplyWeightChanges</span>(__instance);
+        }
+
+        <span class="keyword">private static void</span> <span class="method">ApplyWeightChanges</span>(<span class="type">ObjectDB</span> odb)
+        {
+            <span class="keyword">if</span> (odb == <span class="keyword">null</span> || odb.m_items.Count == <span class="number">0</span>) <span class="keyword">return</span>;
+
+            <span class="comment">// 获取铜矿 Prefab (Prefab 命名为 CopperOre)</span>
+            <span class="type">GameObject</span> copperOre = odb.<span class="method">GetItemPrefab</span>(<span class="string">"CopperOre"</span>);
+            <span class="keyword">if</span> (copperOre != <span class="keyword">null</span>)
+            {
+                <span class="type">ItemDrop</span> drop = copperOre.<span class="method">GetComponent</span>&lt;<span class="type">ItemDrop</span>&gt;();
+                <span class="keyword">if</span> (drop != <span class="keyword">null</span> &amp;&amp; drop.m_itemData?.m_shared != <span class="keyword">null</span>)
+                {
+                    <span class="comment">// 降低 25%：10.0 * 0.75 = 7.5f</span>
+                    drop.m_itemData.m_shared.m_weight = <span class="number">7.5f</span>;
+                }
+            }
+        }
+
+        <span class="comment">// =========================================================================</span>
+        <span class="comment">// 辅助函数：以给定坐标为中心查询满足读写权限的容器</span>
+        <span class="comment">// =========================================================================</span>
+        <span class="keyword">public static</span> <span class="type">List</span>&lt;<span class="type">Container</span>&gt; <span class="method">GetAccessibleNearbyContainers</span>(<span class="type">Vector3</span> origin)
+        {
+            <span class="type">List</span>&lt;<span class="type">Container</span>&gt; result = <span class="keyword">new</span> <span class="type">List</span>&lt;<span class="type">Container</span>&gt;();
+            <span class="keyword">if</span> (<span class="type">Container</span>.m_containers == <span class="keyword">null</span>) <span class="keyword">return</span> result;
+
+            <span class="keyword">long</span> localPlayerId = <span class="type">Player</span>.m_localPlayer ? <span class="type">Player</span>.m_localPlayer.<span class="method">GetPlayerID</span>() : <span class="number">0</span>;
+
+            <span class="keyword">foreach</span> (<span class="type">Container</span> c <span class="keyword">in</span> <span class="type">Container</span>.m_containers)
+            {
+                <span class="keyword">if</span> (c == <span class="keyword">null</span> || c.<span class="method">GetInventory</span>() == <span class="keyword">null</span>) <span class="keyword">continue</span>;
+
+                <span class="comment">// 空间距离平方比较（避免开方，节约 CPU 周期）</span>
+                <span class="keyword">if</span> ((c.transform.position - origin).sqrMagnitude &lt;= ContainerRadius * ContainerRadius)
+                {
+                    <span class="comment">// 校验容器访问权限（未被破坏、未上锁）</span>
+                    <span class="keyword">if</span> (c.<span class="method">CheckAccess</span>(localPlayerId) &amp;&amp; c.canBeRemoved)
+                    {
+                        result.<span class="method">Add</span>(c);
+                    }
+                }
+            }
+            <span class="keyword">return</span> result;
+        }
+
+        <span class="comment">// =========================================================================</span>
+        <span class="comment">// 需求 2.1：合成判定 Hook (Postfix 模式，安全兜底)</span>
+        <span class="comment">// =========================================================================</span>
+        [<span class="attr">HarmonyPatch</span>(<span class="keyword">typeof</span>(<span class="type">Player</span>), <span class="keyword">nameof</span>(<span class="type">Player</span>.<span class="method">HaveRequirements</span>), 
+                      <span class="keyword">new</span>[] { <span class="keyword">typeof</span>(<span class="type">Recipe</span>), <span class="keyword">typeof</span>(<span class="keyword">bool</span>), <span class="keyword">typeof</span>(<span class="keyword">int</span>) })]
+        <span class="keyword">public static class</span> <span class="type">Patch_Player_HaveRequirements</span>
+        {
+            [<span class="attr">HarmonyPostfix</span>]
+            <span class="keyword">public static void</span> <span class="method">Postfix</span>(<span class="type">Player</span> __instance, <span class="type">Recipe</span> recipe, <span class="keyword">int</span> qualityLevel, <span class="keyword">ref bool</span> __result)
+            {
+                <span class="comment">// 如果背包已经够了，直接返回原结果，降低开销</span>
+                <span class="keyword">if</span> (__result || recipe == <span class="keyword">null</span> || __instance != <span class="type">Player</span>.m_localPlayer) <span class="keyword">return</span>;
+
+                <span class="type">List</span>&lt;<span class="type">Container</span>&gt; containers = <span class="method">GetAccessibleNearbyContainers</span>(__instance.transform.position);
+                <span class="keyword">if</span> (containers.Count == <span class="number">0</span>) <span class="keyword">return</span>;
+
+                <span class="keyword">foreach</span> (<span class="type">Piece</span>.<span class="type">Requirement</span> req <span class="keyword">in</span> recipe.m_resources)
+                {
+                    <span class="keyword">if</span> (req.m_resItem == <span class="keyword">null</span>) <span class="keyword">continue</span>;
+
+                    <span class="keyword">int</span> needed = req.<span class="method">GetAmount</span>(qualityLevel);
+                    <span class="keyword">if</span> (needed &lt;= <span class="number">0</span>) <span class="keyword">continue</span>;
+
+                    <span class="keyword">string</span> itemName = req.m_resItem.m_itemData.m_shared.m_name;
+                    <span class="keyword">int</span> available = __instance.<span class="method">GetInventory</span>().<span class="method">CountItems</span>(itemName);
+
+                    <span class="comment">// 背包不够，累加箱子里的物品数量</span>
+                    <span class="keyword">if</span> (available &lt; needed)
+                    {
+                        <span class="keyword">foreach</span> (<span class="type">Container</span> box <span class="keyword">in</span> containers)
+                        {
+                            available += box.<span class="method">GetInventory</span>().<span class="method">CountItems</span>(itemName);
+                            <span class="keyword">if</span> (available &gt;= needed) <span class="keyword">break</span>;
+                        }
+                    }
+
+                    <span class="comment">// 依然不足以满足此材料需求，直接断定失败</span>
+                    <span class="keyword">if</span> (available &lt; needed)
+                    {
+                        __result = <span class="keyword">false</span>;
+                        <span class="keyword">return</span>;
+                    }
+                }
+
+                <span class="comment">// 所有材料皆充足</span>
+                __result = <span class="keyword">true</span>;
+            }
+        }
+
+        <span class="comment">// =========================================================================</span>
+        <span class="comment">// 需求 2.2：资源消耗 Hook (Prefix 模式，短路原函数)</span>
+        <span class="comment">// =========================================================================</span>
+        [<span class="attr">HarmonyPatch</span>(<span class="keyword">typeof</span>(<span class="type">Player</span>), <span class="keyword">nameof</span>(<span class="type">Player</span>.<span class="method">ConsumeResources</span>),
+                      <span class="keyword">new</span>[] { <span class="keyword">typeof</span>(<span class="type">Piece</span>.<span class="type">Requirement</span>[]), <span class="keyword">typeof</span>(<span class="keyword">int</span>), <span class="keyword">typeof</span>(<span class="keyword">int</span>) })]
+        <span class="keyword">public static class</span> <span class="type">Patch_Player_ConsumeResources</span>
+        {
+            [<span class="attr">HarmonyPrefix</span>]
+            <span class="keyword">public static bool</span> <span class="method">Prefix</span>(<span class="type">Player</span> __instance, <span class="type">Piece</span>.<span class="type">Requirement</span>[] requirements, <span class="keyword">int</span> qualityLevel)
+            {
+                <span class="keyword">if</span> (__instance != <span class="type">Player</span>.m_localPlayer) <span class="keyword">return true</span>;
+
+                <span class="type">List</span>&lt;<span class="type">Container</span>&gt; containers = <span class="method">GetAccessibleNearbyContainers</span>(__instance.transform.position);
+
+                <span class="keyword">foreach</span> (<span class="type">Piece</span>.<span class="type">Requirement</span> req <span class="keyword">in</span> requirements)
+                {
+                    <span class="keyword">if</span> (req.m_resItem == <span class="keyword">null</span>) <span class="keyword">continue</span>;
+
+                    <span class="keyword">int</span> totalRequired = req.<span class="method">GetAmount</span>(qualityLevel);
+                    <span class="keyword">if</span> (totalRequired &lt;= <span class="number">0</span>) <span class="keyword">continue</span>;
+
+                    <span class="keyword">string</span> itemName = req.m_resItem.m_itemData.m_shared.m_name;
+                    <span class="keyword">int</span> inBag = __instance.<span class="method">GetInventory</span>().<span class="method">CountItems</span>(itemName);
+
+                    <span class="keyword">if</span> (inBag &gt;= totalRequired)
+                    {
+                        <span class="comment">// 背包充足，直接扣背包</span>
+                        __instance.<span class="method">GetInventory</span>().<span class="method">RemoveItem</span>(itemName, totalRequired);
+                    }
+                    <span class="keyword">else</span>
+                    {
+                        <span class="comment">// 背包不足，先掏空背包</span>
+                        <span class="keyword">if</span> (inBag &gt; <span class="number">0</span>)
+                        {
+                            __instance.<span class="method">GetInventory</span>().<span class="method">RemoveItem</span>(itemName, inBag);
+                        }
+
+                        <span class="keyword">int</span> remaining = totalRequired - inBag;
+
+                        <span class="comment">// 从各箱子中按序划扣</span>
+                        <span class="keyword">foreach</span> (<span class="type">Container</span> box <span class="keyword">in</span> containers)
+                        {
+                            <span class="type">Inventory</span> boxInv = box.<span class="method">GetInventory</span>();
+                            <span class="keyword">int</span> inBox = boxInv.<span class="method">CountItems</span>(itemName);
+
+                            <span class="keyword">if</span> (inBox &gt; <span class="number">0</span>)
+                            {
+                                <span class="keyword">int</span> deduct = <span class="type">Mathf</span>.<span class="method">Min</span>(inBox, remaining);
+                                boxInv.<span class="method">RemoveItem</span>(itemName, deduct);
+                                box.<span class="method">Save</span>(); <span class="comment">// 标记持久化 dirty</span>
+                                remaining -= deduct;
+
+                                <span class="keyword">if</span> (remaining &lt;= <span class="number">0</span>) <span class="keyword">break</span>;
+                            }
+                        }
+                    }
+                }
+
+                <span class="comment">// 返回 false 阻止原版 ConsumeResources 运行（因为原版只知道扣背包，会抛异常）</span>
+                <span class="keyword">return false</span>;
+            }
+        }
+    }
+}</code></pre>
+        <h3 id="sub-feature3">4.3 算法实战：箱内碎片整理与网格排序 (In-Place Defrag & Sort)</h3>
+            <p>对于 C/C++ 开发者，可以将 <code>Inventory</code> 视为一个<strong>定长二维数组投影的稀疏矩阵</strong>。排序包含两个关键阶段：</p>
+            <ol>
+                <li><strong>碎片整理 (Defragmentation)</strong>：合并同种物品且未堆满的槽位，消除空间碎片。</li>
+                <li><strong>排序与重投影 (Sort & Grid Re-projection)</strong>：按多级比较器排序后，通过公式 <code>x = index % width, y = index / width</code> 重新赋值坐标并调用 <code>Changed()</code> 触发重绘。</li>
+            </ol>
+
+            <pre><code><span class="keyword">public static class</span> <span class="type">InventorySorter</span>
+{
+    <span class="keyword">public static void</span> <span class="method">SortAndDefrag</span>(<span class="type">Inventory</span> inv)
+    {
+        <span class="keyword">if</span> (inv == <span class="keyword">null</span> || inv.m_inventory.Count == <span class="number">0</span>) <span class="keyword">return</span>;
+
+        <span class="comment">// 1. 内存碎片整理：合并同类未满堆叠</span>
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; inv.m_inventory.Count; i++)
+        {
+            <span class="keyword">var</span> item = inv.m_inventory[i];
+            <span class="keyword">if</span> (item.m_stack &gt;= item.m_shared.m_maxStackSize) <span class="keyword">continue</span>;
+
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = inv.m_inventory.Count - <span class="number">1</span>; j &gt; i; j--)
+            {
+                <span class="keyword">var</span> other = inv.m_inventory[j];
+                <span class="keyword">if</span> (item.m_shared.m_name == other.m_shared.m_name &amp;&amp; 
+                    item.m_quality == other.m_quality &amp;&amp;
+                    item.m_variant == other.m_variant)
+                {
+                    <span class="keyword">int</span> spaceLeft = item.m_shared.m_maxStackSize - item.m_stack;
+                    <span class="keyword">int</span> take = <span class="type">Mathf</span>.<span class="method">Min</span>(spaceLeft, other.m_stack);
+
+                    item.m_stack += take;
+                    other.m_stack -= take;
+
+                    <span class="keyword">if</span> (other.m_stack &lt;= <span class="number">0</span>)
+                    {
+                        inv.m_inventory.<span class="method">RemoveAt</span>(j); <span class="comment">// 彻底合并，移除空节点</span>
+                    }
+
+                    <span class="keyword">if</span> (item.m_stack &gt;= item.m_shared.m_maxStackSize) <span class="keyword">break</span>;
+                }
+            }
+        }
+
+        <span class="comment">// 2. 多级比较器排序 (类似 std::sort)</span>
+        inv.m_inventory.<span class="method">Sort</span>((a, b) =&gt;
+        {
+            <span class="comment">// 优先级 1: 物品大类 (Material, Weapon, Consumable 等)</span>
+            <span class="keyword">int</span> typeCmp = a.m_shared.m_itemType.<span class="method">CompareTo</span>(b.m_shared.m_itemType);
+            <span class="keyword">if</span> (typeCmp != <span class="number">0</span>) <span class="keyword">return</span> typeCmp;
+
+            <span class="comment">// 优先级 2: 名称字典序</span>
+            <span class="keyword">int</span> nameCmp = <span class="keyword">string</span>.<span class="method">Compare</span>(a.m_shared.m_name, b.m_shared.m_name);
+            <span class="keyword">if</span> (nameCmp != <span class="number">0</span>) <span class="keyword">return</span> nameCmp;
+
+            <span class="comment">// 优先级 3: 品质等级降序</span>
+            <span class="keyword">int</span> qualityCmp = b.m_quality.<span class="method">CompareTo</span>(a.m_quality);
+            <span class="keyword">if</span> (qualityCmp != <span class="number">0</span>) <span class="keyword">return</span> qualityCmp;
+
+            <span class="comment">// 优先级 4: 堆叠数量降序</span>
+            <span class="keyword">return</span> b.m_stack.<span class="method">CompareTo</span>(a.m_stack);
+        });
+
+        <span class="comment">// 3. 二维坐标连续紧凑重映射 (0-indexed)</span>
+        <span class="keyword">int</span> width = inv.m_width;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; inv.m_inventory.Count; i++)
+        {
+            inv.m_inventory[i].m_gridPos = <span class="keyword">new</span> <span class="type">Vector2i</span>(i % width, i / width);
+        }
+
+        <span class="comment">// 4. 通知引擎和 UI 重绘</span>
+        inv.<span class="method">Changed</span>();
+    }
+}</code></pre>
+
+            <h3 id="sub-feature4">4.4 算法实战：智能一键归类存入 (Smart Quick-Stack)</h3>
+            <p>当玩家按下快捷键（例如 <code>N</code>），自动把背包物品归类投递到“周围已放有同类物品”的箱子中。这里必须包含<strong>并发锁检查</strong>与<strong>迭代器失效防御</strong>：</p>
+
+            <pre><code><span class="keyword">public static class</span> <span class="type">QuickStacker</span>
+{
+    <span class="keyword">public static void</span> <span class="method">StackToNearbyContainers</span>(<span class="type">Player</span> player, <span class="keyword">float</span> range = <span class="number">10.0f</span>)
+    {
+        <span class="keyword">if</span> (player == <span class="keyword">null</span>) <span class="keyword">return</span>;
+        <span class="type">Inventory</span> playerInv = player.<span class="method">GetInventory</span>();
+        <span class="keyword">var</span> containers = <span class="type">EzPlayPlugin</span>.<span class="method">GetAccessibleNearbyContainers</span>(player.transform.position);
+
+        <span class="keyword">bool</span> anyTransferred = <span class="keyword">false</span>;
+
+        <span class="comment">// 重要：制作浅拷贝快照！防止在迭代遍历时执行 RemoveItem 导致集合并发修改异常 (类似 C++ 迭代器失效)</span>
+        <span class="type">List</span>&lt;<span class="type">ItemDrop</span>.<span class="type">ItemData</span>&gt; items = <span class="keyword">new</span> <span class="type">List</span>&lt;<span class="type">ItemDrop</span>.<span class="type">ItemData</span>&gt;(playerInv.<span class="method">GetInventory</span>());
+
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> item <span class="keyword">in</span> items)
+        {
+            <span class="keyword">if</span> (item.m_equipped) <span class="keyword">continue</span>;       <span class="comment">// 保护已装备的武器护甲</span>
+            <span class="keyword">if</span> (item.m_gridPos.y == <span class="number">0</span>) <span class="keyword">continue</span>; <span class="comment">// 保护快捷栏第一行物品</span>
+
+            <span class="keyword">string</span> itemName = item.m_shared.m_name;
+
+            <span class="keyword">foreach</span> (<span class="keyword">var</span> box <span class="keyword">in</span> containers)
+            {
+                <span class="comment">// 并发互斥保护：如果有其他玩家正在交互此箱子，跳过避免竞态冲突</span>
+                <span class="keyword">if</span> (box.<span class="method">IsInUse</span>()) <span class="keyword">continue</span>;
+
+                <span class="type">Inventory</span> boxInv = box.<span class="method">GetInventory</span>();
+
+                <span class="comment">// 核心判定规则：箱子里是否已经存在该物品？</span>
+                <span class="keyword">if</span> (boxInv.<span class="method">HaveItem</span>(itemName))
+                {
+                    <span class="comment">// AddItem 会自动处理同类合并和空槽位寻找</span>
+                    <span class="keyword">if</span> (boxInv.<span class="method">AddItem</span>(item))
+                    {
+                        playerInv.<span class="method">RemoveItem</span>(item);
+                        boxInv.<span class="method">Changed</span>();
+                        box.<span class="method">Save</span>(); <span class="comment">// 触发 ZDO 字节流持久化与网络同步</span>
+                        anyTransferred = <span class="keyword">true</span>;
+                        <span class="keyword">break</span>;
+                    }
+                }
+            }
+        }
+
+        <span class="keyword">if</span> (anyTransferred)
+        {
+            playerInv.<span class="method">Changed</span>();
+            player.<span class="method">Message</span>(<span class="type">MessageHud</span>.<span class="type">MessageType</span>.Center, <span class="string">"背包材料已智能归类存入周围箱子！"</span>);
+        }
+    }
+}</code></pre>
+
+            <div class="callout callout-tip">
+                <strong>Unity 驱动入口挂钩：</strong><br>
+                在插件主类的 <code>Update()</code> 循环中，监听键盘按键：
+                <pre><code><span class="keyword">void</span> <span class="method">Update</span>()
+{
+    <span class="keyword">if</span> (<span class="type">Player</span>.m_localPlayer == <span class="keyword">null</span> || <span class="type">Chat</span>.instance?.<span class="method">IsChatDialogWindowVisible</span>() == <span class="keyword">true</span>) <span class="keyword">return</span>;
+
+    <span class="comment">// 按下 N 键：一键智能分类存入周围箱子</span>
+    <span class="keyword">if</span> (<span class="type">Input</span>.<span class="method">GetKeyDown</span>(<span class="type">KeyCode</span>.N))
+    {
+        <span class="type">QuickStacker</span>.<span class="method">StackToNearbyContainers</span>(<span class="type">Player</span>.m_localPlayer, ContainerRadius);
+    }
+
+    <span class="comment">// 打开箱子时按 R 键：对当前箱子执行排序碎片整理</span>
+    <span class="keyword">if</span> (<span class="type">Input</span>.<span class="method">GetKeyDown</span>(<span class="type">KeyCode</span>.R) &amp;&amp; <span class="type">InventoryGui</span>.instance.<span class="method">IsContainerOpen</span>())
+    {
+        <span class="type">Container</span> cur = <span class="type">InventoryGui</span>.instance.m_currentContainer;
+        <span class="keyword">if</span> (cur != <span class="keyword">null</span>) <span class="type">InventorySorter</span>.<span class="method">SortAndDefrag</span>(cur.<span class="method">GetInventory</span>());
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- 第 5 节 -->
+        <section id="section-5">
+            <h2>5. Steam 成就与稳定性深度剖析</h2>
+
+            <div class="callout callout-warning">
+                <strong>工程师警惕：为什么会有“Mod 破坏成就”的传闻？</strong><br>
+                英灵神殿官方（Iron Gate）在代码层面<strong>从未主动检测或封杀 Mod 玩家的 Steam 成就</strong>。之所以有些玩家遇到了无法解锁成就的 Bug，完全是劣质 Mod 的代码结构引起的副作用。
+            </div>
+
+            <h3>三大踩坑原因与规避指南</h3>
+
+            <h4>1. 暴力 Prefix 拦截截断了函数尾部的事件派发</h4>
+            <p>很多初学者喜欢直接在 <code>[HarmonyPrefix]</code> 返回 <code>false</code>。如果你拦截的原函数末尾恰好包含如下语句：</p>
+            <pre><code><span class="comment">// 假设的原版函数尾部</span>
+<span class="type">SteamUserStats</span>.<span class="method">SetAchievement</span>(<span class="string">"ACH_CRAFT_FIRST_ITEM"</span>);</code></pre>
+            <p>一旦你返回 <code>false</code>，原函数的这行代码便再也没有机会执行。在我们的实战代码中，<code>Player.ConsumeResources</code> 只是底层的扣减数据函数，真正的制造完成和成就判定在上层 <code>InventoryGui.DoCrafting</code>，因此完全安全。</p>
+
+            <h4>2. 异常外溢导致调用栈崩溃</h4>
+            <p>原版游戏中，如果你的 Hook 代码由于空指针（NullReferenceException）或越界崩溃，CLR 会直接向上展开调用栈，跳过后续所有未执行的原生逻辑。因此：</p>
+            <ul>
+                <li>在 Hook 方法中，对所有的对象引用（特别是 <code>m_localPlayer</code>、<code>Recipe</code>、<code>Container</code>）必须严格做判空防御。</li>
+                <li>关键业务代码建议用 <code>try { ... } catch (Exception ex) { Logger.LogError(ex); }</code> 包裹，保证无论如何不能破坏游戏原生的调用栈。</li>
+            </ul>
+
+            <h4>3. 严禁改动 SteamManager</h4>
+            <p>不要在任何 Mod 中挂钩 <code>SteamManager</code>、<code>SteamUserStats</code> 或替换 <code>steam_api64.dll</code>。保持 Steam IPC 通道纯净。</p>
+        </section>
+
+        <!-- 第 6 节 -->
+        <section id="section-6">
+            <h2>6. 高级主题：IL 字节码操纵 (Transpiler)</h2>
+            <p>如果你来自 C/C++ 领域，习惯了使用反汇编器分析机器码指令，那么 Harmony 的 <strong>Transpiler（代码翻译器）</strong> 就是为你量身定制的武器。</p>
+            <p>假设有一个原版方法有 300 行，里面只有一行是 <code>if (distance &gt; 10f)</code>，如果你用 Prefix 完全重写这 300 行，不仅维护成本极高，而且一旦游戏官方更新就会崩溃。Transpiler 允许你像操作汇编指令一样，修改中间语言（CIL）：</p>
+
+            <pre><code><span class="comment">// CIL 指令流模式匹配示例</span>
+[<span class="attr">HarmonyPatch</span>(<span class="keyword">typeof</span>(<span class="type">SomeGameClass</span>), <span class="keyword">nameof</span>(<span class="type">SomeGameClass</span>.<span class="method">CalculateRange</span>))]
+<span class="keyword">public static class</span> <span class="type">Patch_Transpiler_Example</span>
+{
+    [<span class="attr">HarmonyTranspiler</span>]
+    <span class="keyword">public static</span> <span class="type">IEnumerable</span>&lt;<span class="type">CodeInstruction</span>&gt; <span class="method">Transpiler</span>(<span class="type">IEnumerable</span>&lt;<span class="type">CodeInstruction</span>&gt; instructions)
+    {
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> instruction <span class="keyword">in</span> instructions)
+        {
+            <span class="comment">// 寻找加载浮点数常量 10.0 的指令：ldc.r4 10.0f</span>
+            <span class="keyword">if</span> (instruction.opcode == <span class="type">OpCodes</span>.Ldc_R4 &amp;&amp; (<span class="keyword">float</span>)instruction.operand == <span class="number">10.0f</span>)
+            {
+                <span class="comment">// 将其动态替换为 50.0f</span>
+                instruction.operand = <span class="number">50.0f</span>;
+            }
+            <span class="keyword">yield return</span> instruction;
+        }
+    }
+}</code></pre>
+            <p>这种修改直接在 JIT 编译前重写指令流，<strong>运行时开销为绝对的 0（零抽象开销）</strong>，与原生代码执行速度完全一致。</p>
+        </section>
+
+        <!-- 第 7 节 -->
+        <section id="section-7">
+            <h2>7. 调试、日志与快速排错</h2>
+            
+            <h3>开启 BepInEx 实时黑窗口控制台</h3>
+            <p>在开发过程中，最直观的调试方式是开启终端日志。编辑 <code>Valheim/BepInEx/config/BepInEx.cfg</code>：</p>
+            <pre><code>[Logging.Console]
+<span class="comment"># 将 False 改为 True</span>
+Enabled = true</code></pre>
+            <p>再次启动游戏时，会伴随弹出一个专用的控制台黑窗口，实时打印所有 <code>Logger.LogInfo()</code>、异常堆栈和 Harmony 补丁加载状态，排错效率极高。</p>
+
+            <h3>总结</h3>
+            <p>对于 C/C++ 开发者而言，Valheim 的 Mod 开发本质上就是<strong>“拥有完美反编译源码支持的用户态内存 Hook”</strong>。只要掌握好生命周期入口、Harmony 拦截点选择与防御式异常隔离，你就能随心所欲地扩展和重构游戏的绝大多数机制。</p>
+        </main>
+</body>
+</html>
