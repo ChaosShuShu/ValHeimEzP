@@ -1,0 +1,17 @@
+# 构建输出与中间文件
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# 本地私有路径配置（由开发者自行从 Environment.props.example 复制）
+Environment.props
+
+# IDE 与编辑器配置
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store

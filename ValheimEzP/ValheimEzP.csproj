@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>ValheimEzP</AssemblyName>
+    <RootNamespace>ValheimEzP</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <!-- 1. 尝试导入本地私有配置文件（如果存在） -->
+  <Import Project="Environment.props" Condition="Exists('Environment.props')" />
+
+  <!-- 2. 兜底策略：优先读取系统环境变量，保证在 CI 或其他机器上也可编译 -->
+  <PropertyGroup>
+    <ValheimManagedDir Condition="'$(ValheimManagedDir)' == ''">$(VALHEIM_MANAGED_DIR)</ValheimManagedDir>
+    <BepInExCoreDir Condition="'$(BepInExCoreDir)' == ''">$(BEPINEX_CORE_DIR)</BepInExCoreDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- BepInEx & Harmony 核心库 -->
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExCoreDir)/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>$(BepInExCoreDir)/BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- 游戏本体逻辑库 -->
+    <Reference Include="assembly_valheim">
+      <HintPath>$(ValheimManagedDir)/assembly_valheim.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="assembly_guiutils">
+      <HintPath>$(ValheimManagedDir)/assembly_guiutils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="assembly_utils">
+      <HintPath>$(ValheimManagedDir)/assembly_utils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity 引擎库 -->
+    <Reference Include="UnityEngine">
+      <HintPath>$(ValheimManagedDir)/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ValheimManagedDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(ValheimManagedDir)/UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ValheimManagedDir)/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

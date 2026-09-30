@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  使用说明：
+  将此文件复制一份并重命名为 Environment.props
+  填入你当前开发机器上的实际游戏和 BepInEx 依赖路径
+-->
+<Project>
+  <PropertyGroup>
+    <!-- Linux 路径配置示例 -->
+    <ValheimManagedDir Condition="Exists('/home/your_user/.steam/steamcmd/valheim_server/valheim_server_Data/Managed')">/home/your_user/.steam/steamcmd/valheim_server/valheim_server_Data/Managed</ValheimManagedDir>
+    <BepInExCoreDir Condition="Exists('/home/your_user/Valheim/libs/bepinex/BepInEx/core')">/home/your_user/Valheim/libs/bepinex/BepInEx/core</BepInExCoreDir>
+
+    <!-- Windows 路径配置示例 -->
+    <ValheimManagedDir Condition="Exists('D:\SteamLibrary\steamapps\common\Valheim\valheim_Data\Managed')">D:\SteamLibrary\steamapps\common\Valheim\valheim_Data\Managed</ValheimManagedDir>
+    <BepInExCoreDir Condition="Exists('D:\SteamLibrary\steamapps\common\Valheim\BepInEx\core')">D:\SteamLibrary\steamapps\common\Valheim\BepInEx\core</BepInExCoreDir>
+  </PropertyGroup>
+</Project>
