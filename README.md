@@ -1,6 +1,6 @@
-# ValheimEzPlay (英灵神殿便捷生存增强 Mod)
+# ccValheim_EazyPlay (ValheimEzPlay)
 
-专为提升《英灵神殿》（Valheim）生存与建造体验打造的轻量级 Quality-of-Life (QoL) 模组，基于 BepInEx 5.x 与 Harmony 构建。
+专为提升《英灵神殿》（Valheim）畅爽生存与建造体验打造的便捷模组，基于 BepInEx 5.x 与 Harmony 构建。
 
 ## ✨ 核心特性
 
